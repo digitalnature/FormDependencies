@@ -1,0 +1,41 @@
+
+ jQuery Form Dependencies v1.3
+   by digitalnature
+   
+     http://digitalnature.eu   
+     http://github.com/digitalnature/Form-Dependencies
+
+
+
+   This is an improved jQuery port of the Form Manager script by Twey:
+
+      http://www.twey.co.uk/
+      http://www.dynamicdrive.com/dynamicindex16/formdependency.htm
+
+      Form Manager: A simple method of constructing complex dynamic forms.
+      Written by Twey, http://www.twey.co.uk/.
+      Use, copying, and modification allowed, so long as credit
+      remains intact, under the terms of the GNU General Public License,
+      version 2 or later. See http://www.gnu.org/copyleft/gpl.html for details.
+
+
+
+  Usage examples:
+
+    $('form').FormDependencies();
+    $('#some_div').FormDependencies({attribute:'data-rules', disable_only:false, clear_inactive:true});
+
+
+
+  Change log:
+
+    13 feb. 2012, v1.3  - slightly improved performance (rules are parsed once, and only dependencies are now iterated during checks)
+                        - changed target selector to match the container of the input fields, instead of the input fields directly
+                        - added repo to github (first public release)
+
+    23 jun. 2011, v1.2  - Fixed a problem in the value matching function
+
+    21 jun. 2011, v1.1  - Added disable_only / clear_inactive options
+
+    20 jun. 2011, v1.0  - First release
+
