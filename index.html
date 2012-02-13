@@ -1,0 +1,136 @@
+<html>
+<head>
+  <title>Tests</title>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script type="text/javascript" src="jquery.form-dependencies.js"></script>
+
+  <script type="text/javascript">
+
+    jQuery(document).ready(function($){
+
+      $("#test1").FormDependencies();
+
+      $("#test2").FormDependencies({
+        disable_only   : false,
+        clear_inactive : true
+      });
+
+    });
+
+  </script>
+
+  <style type="text/css">
+
+    body{
+      font: 15px Arial;
+      background: #f5f5f5;
+    }
+
+    .disabled{
+      color: #ddd;
+      text-decoration: line-through;
+    }
+
+    p{
+      margin: 40px 0;
+    }
+
+    label{
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    input, textarea{
+      padding: 5px 10px;
+    }
+
+    div{
+      background: #fff;
+      padding: 5px 20px;
+      margin: 40px auto;
+      width: 740px;
+      border-radius: 20px;
+      box-shadow: 0 0 10px 10px #eee;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="test1">
+    <h1>Testing Defaults</h1>
+    <p>
+      <select name="s1" id="s1">
+        <option value="dr2">Disable last two radios</option>
+        <option value="dr1">Disable first radio</option>
+        <option>Enable All</option>
+      </select>
+      <label for="r1"><input type="radio" name="rr" id="r1" value="yes" checked="checked" rules="CONFLICTS WITH s1 BEING dr1">The</label>
+      <label for="r2"><input type="radio" name="rr" id="r2" value="no">Radio</label>
+      <label for="r3"><input type="radio" name="rr" id="r3" value="no" rules="CONFLICTS WITH s1 BEING dr2">Ga</label>
+      <label for="r4"><input type="radio" name="rr" id="r4" value="no" rules="CONFLICTS WITH s1 BEING dr2">Ga</label>
+    </p>
+
+    <p>
+      <label for="c1"><input type="checkbox" id="c1" name="c1">Check</label>
+      <label for="c2"><input type="checkbox" id="c2" name="c2">Check</label>
+      <label for="c3"><input type="checkbox" id="c3" name="c3">Don't</label>
+      <label for="t1">Text <input type="text" id="t1" name="t1" rules="DEPENDS ON c1 AND DEPENDS ON c2 AND CONFLICTS WITH c3"></label>
+      <label for="t2">More <input type="text" id="t2" name="t2" rules="CONFLICTS WITH t1 BEING EMPTY"></label>
+    </p>
+
+    <p>
+      <label for="c5"><input type="checkbox" id="c5" name="c5">Enable select</label>
+      <select name="s2" rules="DEPENDS ON c5" id="s2">
+        <option>one</option>
+        <option>trick</option>
+        <option>pony</option>
+      </select>
+    </p>
+
+    <p>
+      <label for="t5">Type "<strong>Agree</strong>" <input type="text" id="t5" name="t5" value=""></label>
+      <input type="submit" id="b1" name="b1" rules="DEPENDS ON t5 BEING Agree" value="submit">
+    </p>
+  </div>
+
+  <div id="test2">
+    <h1>Hide+Clear Fields</h1>
+    <p>
+      <label for="c7"><input type="checkbox" id="c7" name="c7">Enable Chained Select</label>
+      <select name="s7" rules="DEPENDS ON c7" id="s7">
+        <option>stop?</option>
+        <option value="further">go further (1)</option>
+      </select>
+
+      <select name="s8" rules="DEPENDS ON s7 BEING further" id="s8">
+        <option>stop</option>
+        <option value="further">go further (2)</option>
+      </select>
+
+      <select name="s9" rules="DEPENDS ON s8 BEING further" id="s9">
+        <option>the</option>
+        <option>end</option>
+      </select>
+    </p>
+
+
+    <p>
+      <label for="ms">Select "<strong>Blue</strong>" and "<strong>Black</strong>"</label><br />
+      <select multiple="multiple" name="ms" id="ms">
+        <option value="red">Red</option>
+        <option value="green">Green</option>
+        <option value="blue">Blue</option>
+        <option value="black">Black</option>
+        <option value="Ewok">Ewok</option>
+      </select>
+      <br />
+      <input type="submit" name="t41" value="Double" rules="DEPENDS ON ms BEING blue,black" />
+      <input type="submit" name="t42" value="Rainbow" rules="DEPENDS ON ms BEING blue,black" />
+      <input type="submit" name="t43" value="Triple Rainbow" rules="DEPENDS ON ms BEING red,blue,black" />
+
+    </p>
+  </div>
+
+</body>
+</html>
