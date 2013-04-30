@@ -1,180 +1,169 @@
 /*
 
- jQuery Form Dependencies v1.3
-   by digitalnature
-
-     http://digitalnature.eu
-     http://github.com/digitalnature/Form-Dependencies
-
-     Demo: http://dev.digitalnature.eu/jquery/form-dependencies/
-
-
-
-   This is an improved jQuery port of the Form Manager script by Twey:
-
-      http://www.twey.co.uk/
-      http://www.dynamicdrive.com/dynamicindex16/formdependency.htm
-
-      Form Manager: A simple method of constructing complex dynamic forms.
-      Written by Twey, http://www.twey.co.uk/.
-      Use, copying, and modification allowed, so long as credit
-      remains intact, under the terms of the GNU General Public License,
-      version 2 or later. See http://www.gnu.org/copyleft/gpl.html for details.
-
-
-
-  Usage examples:
-
-    $('form').FormDependencies();
-    $('#some_div').FormDependencies({attribute:'data-rules', disable_only:false, clear_inactive:true});
-
-
-
-  Change log:
-
-    13 feb. 2012, v1.3  - slightly improved performance (rules are parsed once, and only dependencies are now iterated during checks)
-                        - changed target selector to match the container of the input fields, instead of the input fields directly
-                        - added repo to github (first public release)
-
-    23 jun. 2011, v1.2  - Fixed a problem in the value matching function
-
-    21 jun. 2011, v1.1  - Added disable_only / clear_inactive options
-
-    20 jun. 2011, v1.0  - First release
-
+ jQuery Form Dependencies v2.0
+   http://github.com/digitalnature/Form-Dependencies
 */
+
 
 (function($){
 $.fn.FormDependencies = function(opts){
 
   var defaults = {
-        attribute              : 'rules',           // the attribute which contains the rules (use 'data-rules' for w3c-valid HTML5 code)
-        disable_only           : true,              // if true it will disable fields + label, otherwise it will also hide them
-        clear_inactive         : false,             // clears input values from hidden/disabled fields
-        identify_by            : 'name',            // attribute used to identify dependencies (ie. DEPENDS ON [identify_by] BEING ...)
 
-        condition_separator    : ' AND ',           // rules...
-        possibility_separator  : ' OR ',
-        name_value_separator   : ' BEING ',
-        depends                : 'DEPENDS ON ',
-        conflicts              : 'CONFLICTS WITH ',
-        empty                  : 'EMPTY'
+        // the attribute which contains the rules (you can use 'data-rules' for w3c-valid HTML5 code)
+        ruleAttr        : 'data-depends-on',
+
+        // if given, this class will be applied to disabled elements
+        inactiveClass   : false,
+
+        // clears input values from hidden/disabled fields
+        clearValues     : false,
+
+        // attribute used to identify dependencies, must be unique if other than "name"
+        identifyBy      : 'name'
       },
 
       opts = $.extend(defaults, opts),
 
-      valueMatches = function(e, v){
-        if(v === opts.empty) v = '';
-        return (e.val() == v || (e.is(':radio') && e.filter(':checked').val() == v));
-      };
+      // disable (and maybe hide) the hooked element
+      disable = function(e){
 
+        if(!$(e).is(':input') && !$(e).hasClass('disabled'))
+          $(e).addClass('disabled');
+
+        if(!e.disabled){
+          e.disabled = true;
+          $('label[for="' + e.id + '"]').addClass('disabled');
+
+          if(opts.inactiveClass)
+            $(e, 'label[for="' + e.id + '"]').addClass(opts.inactiveClass);
+
+          // we don't want to "clear" submit buttons
+          if(opts.clearValues && !$(e).is(':submit'))
+            if($(e).is(':checkbox, :radio')) e.checked = false; else if(!$(e).is('select')) $(e).val('');
+
+        }
+      },
+
+      // enable (and show?) the hooked element
+      enable = function(e){
+
+        if(!$(e).is(':input') && $(e).hasClass('disabled'))
+          $(e).removeClass('disabled');
+
+        if(e.disabled){
+          e.disabled = false;
+          $('label[for="' + e.id + '"]').removeClass('disabled');
+
+          if(opts.inactiveClass || !$(e).is(':visible'))
+            $(e, 'label[for="' + e.id + '"]').removeClass(opts.inactiveClass);
+
+          //if(opts.clear_inactive && $(e).is(':checkbox, :radio')) e.checked = true;
+        }
+
+      },
+
+      // verifies if conditions are met
+      matches = function(key, values, block){
+
+        var i, v, invert = false, e = $('[' + opts.identifyBy + '="' + key + '"]', block);
+
+        e = e.is(':radio') ? e.filter(':checked') : e.filter('[type!="hidden"]')
+
+        for(i = 0; i < values.length; i++){
+
+          v = values[i];
+          invert = false;
+
+          if(v[0] === '!'){
+            invert = true;
+            v = v.substr(1);
+          }
+
+          if((e.val() == v) || (!v && e.is(':checked')) || ((e.is(':submit') || e.is(':button')) && !e.is(':disabled')))
+            return !invert;
+        }
+
+        return invert;
+      },
+
+      split = function(str, chr){
+        return $.map(str.split(chr), $.trim);
+      };
 
   return this.each(function(){
 
-    var inputs = $('input, select, textarea', this),
+    var block = this, rules = [], keys = [];
 
-        // parse rules
-        dependencies = inputs.filter(function(index){
+    // parse rules
+    $('[' + opts.ruleAttr + ']', this).each(function(){
+      var deps = $(this).attr(opts.ruleAttr), dep, values, parsedDeps = {}, i, invert;
 
-          var j, k, f, n, rules = $(this).attr(opts.attribute), deps = {}, conflicts = {};
+      if(!deps)
+        return this;
 
-          if(!rules)
+      deps = split(deps, '+');
+
+      for(i = 0; i < deps.length; i++){
+
+        dep = deps[i];
+        invert = false;
+
+        // reverse conditional check if the name starts with '!'
+        // the rules should have any values specified in this case
+        if(dep[0] === '!'){
+          dep = dep.substr(1);
+          invert = true;
+        }
+
+        dep = split(dep, ':');
+        values = dep[1] || '';
+
+        if(!values && invert)
+          values = '!';
+
+        parsedDeps[dep[0]] = split(values, '|');
+
+        // store key inputs in a separate array
+        $('[' + opts.identifyBy + '="' + dep[0] + '"]', block).filter('[type!="hidden"]').each(function(){
+          ($.inArray(this, keys) !== -1) || keys.push(this);
+          parsedDeps[dep[0]].target = this;
+        });
+
+      }
+
+      rules.push({target: this, deps: parsedDeps});
+    });
+
+    if(!keys.length)
+      return;
+
+    // attach our state checking function on keys (ie. inputs on which other inputs depend on)
+    $(keys).on('change.FormDependencies keyup', function(event){
+
+      // iterate trough all rules
+      $.each(rules, function(input, inputRules){
+
+        var hideIt = false;
+
+        $.each(inputRules.deps, function(key, values){
+
+          // we check only if a condition fails,
+          // in which case we know we need to hide the hooked element
+          if(!matches(key, values, block)){
+            hideIt = true;
             return false;
-
-          for(j = 0, f = rules.split(opts.condition_separator); j < f.length; ++j){
-            if(f[j].indexOf(opts.depends) === 0){
-              for(k = 0, g = f[j].substr(opts.depends.length).split(opts.possibility_separator); k < g.length; ++k){
-                n = g[k].split(opts.name_value_separator);
-
-                if(!deps[n[0]])
-                  deps[n[0]] = [];
-
-                g[k].indexOf(opts.name_value_separator) === -1 ?  deps[n[0]].push('') : deps[n[0]].push(n[1]);
-              }
-
-            }else if(f[j].indexOf(opts.conflicts) === 0){
-              n = f[j].substr(opts.conflicts.length).split(opts.name_value_separator);
-
-              if(!conflicts[n[0]])
-                conflicts[n[0]] = [];
-
-              f[j].indexOf(opts.name_value_separator) === -1 ? conflicts[n[0]].push('') : conflicts[n[0]].push(n[1]);
-            };
-          }
-
-          $(this).data('deps', deps).data('conflicts', conflicts);
-
-          return true;
-
-        });
-
-    // do the checks on input change
-    inputs.bind('change input', function(){
-
-      dependencies.each(function(){
-
-        var hide = false, deps = $(this).data('deps'), conflicts = $(this).data('conflicts');
-
-        $.each(deps, function(name, items){
-          var match = inputs.filter('[' + opts.identify_by + '="' + name + '"]');
-
-          for(var i = 0; i < items.length; i++){
-            if((items[i] && !valueMatches(match, items[i])) || (!items[i] && !match.is(':checked'))){
-              hide = true;
-              break;
-            }
           }
 
         });
 
-        if(!hide){
-          $.each(conflicts, function(name, items){
-            var match = inputs.filter('[' + opts.identify_by + '="' + name + '"]');
-
-            for(var i = 0; i < items.length; i++){
-              if((items[i] && valueMatches(match, items[i])) || (!items[i]  && match.is(':checked'))){
-                hide = true;
-                break;
-              }
-
-            }
-
-          });
-        }
-
-        // hide / disable
-        if(hide && !$(this).is(':disabled')){
-          this.disabled = true;
-          $('label[for="' + this.id + '"]').addClass('disabled');
-
-          if(!opts.disable_only){
-            $(this).hide();
-            $('label[for="' + this.id + '"]').hide();
-          }
-
-          // ignore submit buttons
-          if(opts.clear_inactive && !$(this).is(':submit'))
-            if($(this).is(':checkbox,:radio')) this.checked = false; else if(!$(this).is('select')) $(this).val('');
-
-
-        // show / enable
-        }else if(!hide && $(this).is(':disabled')){
-          this.disabled = false;
-          $('label[for="' + this.id + '"]').removeClass('disabled');
-
-          if(!opts.disable_only){
-            $(this).show();
-            $('label[for="' + this.id + '"]').show();
-          }
-
-        }
+        hideIt ? disable(inputRules.target) : enable(inputRules.target);
 
       });
 
-    });
-
-    inputs.change();
-
+    }).trigger('change.FormDependencies');
+   
+    return this;
   });
 
 };
