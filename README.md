@@ -1,5 +1,5 @@
 
- # jQuery Form Dependencies
+# jQuery Form Dependencies
 
 This jQuery plugin allows you to easily set up dependency rules between form elements through the HTML markup. Original idea from [Twey's Form Manager script](http://www.dynamicdrive.com/dynamicindex16/formdependency.htm).
 
