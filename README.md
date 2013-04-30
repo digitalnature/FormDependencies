@@ -5,7 +5,7 @@ This jQuery plugin allows you to easily set up dependency rules between form ele
 
 ## Examples
 
-A complex demo can be seen [**here**](http://dev.digitalnature.eu/jquery/form-dependencies/)
+A complex demo can be seen [**here**](http://dev.digitalnature.eu/javascript/jQuery-Form-Dependencies/)
 
 Basic example:
 
