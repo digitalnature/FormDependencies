@@ -10,22 +10,21 @@ $.fn.FormDependencies = function(opts){
 
   var defaults = {
 
-        // the attribute which contains the rules (you can use 'data-rules' for w3c-valid HTML5 code)
+        // the attribute which contains the rules
         ruleAttr        : 'data-depends-on',
 
         // if given, this class will be applied to disabled elements
         inactiveClass   : false,
 
-        // clears input values from hidden/disabled fields
+        // clears input values from disabled fields
         clearValues     : false,
 
-        // attribute used to identify dependencies, must be unique if other than "name"
+        // attribute used to identify dependencies
         identifyBy      : 'name'
       },
 
       opts = $.extend(defaults, opts),
 
-      // disable (and maybe hide) the hooked element
       disable = function(e){
 
         if(!$(e).is(':input') && !$(e).hasClass('disabled'))
@@ -45,7 +44,6 @@ $.fn.FormDependencies = function(opts){
         }
       },
 
-      // enable (and show?) the hooked element
       enable = function(e){
 
         if(!$(e).is(':input') && $(e).hasClass('disabled'))
@@ -58,7 +56,6 @@ $.fn.FormDependencies = function(opts){
           if(opts.inactiveClass || !$(e).is(':visible'))
             $(e, 'label[for="' + e.id + '"]').removeClass(opts.inactiveClass);
 
-          //if(opts.clear_inactive && $(e).is(':checkbox, :radio')) e.checked = true;
         }
 
       },
@@ -124,7 +121,7 @@ $.fn.FormDependencies = function(opts){
 
         parsedDeps[dep[0]] = split(values, '|');
 
-        // store key inputs in a separate array
+        // store dep. elements in a separate array
         $('[' + opts.identifyBy + '="' + dep[0] + '"]', block).filter('[type!="hidden"]').each(function(){
           ($.inArray(this, keys) !== -1) || keys.push(this);
           parsedDeps[dep[0]].target = this;
@@ -136,20 +133,19 @@ $.fn.FormDependencies = function(opts){
     });
 
     if(!keys.length)
-      return;
+      return this;
 
-    // attach our state checking function on keys (ie. inputs on which other inputs depend on)
+    // attach our state checking function on keys (ie. elements on which other elements depend on)
     $(keys).on('change.FormDependencies keyup', function(event){
 
       // iterate trough all rules
       $.each(rules, function(input, inputRules){
-
         var hideIt = false;
 
         $.each(inputRules.deps, function(key, values){
 
           // we check only if a condition fails,
-          // in which case we know we need to hide the hooked element
+          // in which case we know we need to disable the hooked element
           if(!matches(key, values, block)){
             hideIt = true;
             return false;
